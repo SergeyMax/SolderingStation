@@ -63,6 +63,7 @@ TIM_HandleTypeDef htim17;
 #define X_RES                   5 // char columns
 #define Y_RES                   8 // char rows
 #define BAR_LENGTH              14 // chars
+#define POWER_THRESHOLD         400000 // ~0.4W/measurement
   
 uint32_t hal_tick = 0;
 uint32_t hal_tick_prev = 0;
@@ -183,6 +184,9 @@ int main(void)
     HAL_Delay( IWDG_REFRESH_DELAY );
     HAL_IWDG_Refresh( &hiwdg );
   }
+
+  if( HAL_ADCEx_Calibration_Start( &hadc ) != HAL_OK )
+    _Error_Handler(__FILE__, __LINE__);
   
   lcd_command( 0x48 ); // uploading custom 5x8 fonts into the CGRAM with base address 08
   uint8_t dots = 0;
@@ -269,7 +273,7 @@ int main(void)
       power = voltage * current * 33 * 5; // full scale up to 33V*5A = 165W
       
       lcd_position( 0x00 );
-      if( power - power_prev > 300000 )
+      if( power - power_prev > POWER_THRESHOLD )
         lcd_prints( "      POWER \x7e   " );
       else
         lcd_prints( "      READY     " );
