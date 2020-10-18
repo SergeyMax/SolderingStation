@@ -234,7 +234,9 @@ int main(void)
     if( hal_tick % IWDG_REFRESH_DELAY == 0 )
     {
       HAL_IWDG_Refresh( &hiwdg );
+#ifndef OLED_EASTRISING // Pin used for reset line
       HAL_GPIO_TogglePin( GPIOB, GPIO_PIN_1 ); //heartbeat just for fun
+#endif
     }
     
     if( tip_delay > 0 )
