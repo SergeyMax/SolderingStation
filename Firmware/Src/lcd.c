@@ -4,6 +4,7 @@
 #define DAT_LINE        ((uint16_t)0x00F0)
 #define E_LINE          GPIO_PIN_3
 #define RS_LINE         GPIO_PIN_2
+#define RESET_LINE      GPIO_PIN_1
 
 char digits[11];
 
@@ -38,6 +39,15 @@ void lcd_init()
 
 void oled_init()
 {
+#ifdef OLED_EASTRISING
+  HAL_GPIO_WritePin( GPIOA, E_LINE, GPIO_PIN_RESET ); // E line startup state
+  HAL_GPIO_WritePin( GPIOA, RS_LINE, GPIO_PIN_RESET ); // command mode
+
+  HAL_GPIO_WritePin( GPIOB, RESET_LINE, GPIO_PIN_RESET );
+  lcd_delay( 100000 ); // awaiting for power supply stability
+  HAL_GPIO_WritePin( GPIOB, RESET_LINE, GPIO_PIN_SET );
+  lcd_delay( 100 );
+#else
   HAL_GPIO_WritePin( GPIOA, E_LINE, GPIO_PIN_SET ); // E line startup state
   HAL_GPIO_WritePin( GPIOA, RS_LINE, GPIO_PIN_RESET ); // command mode
   
@@ -64,7 +74,8 @@ void oled_init()
   GPIOA->ODR = GPIOA->ODR & ~DAT_LINE | 0x20; // 0010 0000b
   lcd_pulse();
   lcd_delay( 40 );
-  
+#endif
+
   // function set
   lcd_command( 0x28 ); // 0010 1000b; 4-bit, 2-line, 5x8
   lcd_command( 0x0c ); // 0000 1100b; display=on, cursor=off, blinking=off
@@ -152,6 +163,12 @@ void lcd_printd4( int32_t n )
 
 void lcd_position( uint8_t position )
 {
+#ifdef OLED_EASTRISING
+  // The datasheet lies. Second line
+  // is in a different position.
+  if (position & 0x40)
+    position -= 0x20;
+#endif
   lcd_command( position | 0x80 );
 }
 
